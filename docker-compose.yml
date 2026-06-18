@@ -12,11 +12,23 @@ services:
       - Jwt__Secret=super-secret-jwt-key-minimum-32-chars!!
       - Jwt__Issuer=matrix-mizrachi
       - Jwt__Audience=matrix-mizrachi-client
-      - Mockoon__BaseUrl=http://host.docker.internal:3001
+      - Mockoon__BaseUrl=http://mockoon:3001
       - Kafka__Enabled=true
       - Kafka__BootstrapServers=kafka:9092
     depends_on:
       - kafka
+      - mockoon
+      - redis
+    networks:
+      - dna-network
+
+  mockoon:
+    image: mockoon/cli:latest
+    command: ["start", "--data", "/data/mockoon-environment.json", "--port", "3001"]
+    volumes:
+      - ./mockoon/mockoon-environment.json:/data/mockoon-environment.json:ro
+    ports:
+      - "3001:3001"
     networks:
       - dna-network
 
