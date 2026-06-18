@@ -1,0 +1,144 @@
+openapi: 3.0.3
+info:
+  title: Math Operations API
+  description: API for performing arithmetic operations on two numeric values
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Development server
+paths:
+  /api/math:
+    post:
+      summary: Perform arithmetic operation
+      description: Performs an arithmetic operation (add, subtract, multiply, divide) on two numbers. Requires JWT Bearer token and X-ArithmeticOp-ID header.
+      operationId: performMathOperation
+      tags:
+        - Math
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: header
+          name: X-ArithmeticOp-ID
+          required: true
+          schema:
+            type: string
+            enum:
+              - add
+              - subtract
+              - multiply
+              - divide
+          description: Type of arithmetic operation to perform
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MathRequest'
+            examples:
+              add:
+                summary: Addition
+                value:
+                  operation: add
+                  x: 10
+                  y: 5
+              subtract:
+                summary: Subtraction
+                value:
+                  operation: subtract
+                  x: 10
+                  y: 3
+              multiply:
+                summary: Multiplication
+                value:
+                  operation: multiply
+                  x: 4
+                  y: 3
+              divide:
+                summary: Division
+                value:
+                  operation: divide
+                  x: 10
+                  y: 2
+      responses:
+        '200':
+          description: Successful arithmetic operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MathResponse'
+        '400':
+          description: Bad request (e.g., division by zero or unknown operation)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Missing or invalid JWT Bearer token
+  /api/auth/token:
+    post:
+      summary: Generate JWT token
+      description: Generates a JWT Bearer token for testing purposes
+      operationId: generateToken
+      tags:
+        - Auth
+      responses:
+        '200':
+          description: JWT token generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT Bearer token to use in Authorization header
+components:
+  schemas:
+    MathRequest:
+      type: object
+      required:
+        - operation
+        - x
+        - y
+      properties:
+        operation:
+          type: string
+          description: Arithmetic operation type
+          enum:
+            - add
+            - subtract
+            - multiply
+            - divide
+        x:
+          type: number
+          format: double
+          description: First operand
+        y:
+          type: number
+          format: double
+          description: Second operand
+    MathResponse:
+      type: object
+      properties:
+        result:
+          type: number
+          format: double
+          description: Result of the arithmetic operation
+        description:
+          type: string
+          description: Operation description retrieved from Mockoon
+        fromCache:
+          type: boolean
+          description: Whether the result was served from cache
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer token - obtain from POST /api/auth/token

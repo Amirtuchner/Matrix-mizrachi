@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Matrix mizrachi.Tests/Matrix mizrachi.Tests.csproj" />
+  <Project Path="Matrix mizrachi/Matrix mizrachi.csproj" />
+</Solution>

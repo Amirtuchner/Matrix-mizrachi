@@ -1,0 +1,6 @@
+@Matrix_mizrachi_HostAddress = http://localhost:5219
+
+GET {{Matrix_mizrachi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
