@@ -60,7 +60,8 @@ public class MathController : ControllerBase
         // Cache hit
         if (_cache.TryGetValue(cacheKey, out CachedMathResult? cached))
         {
-            _logger.LogInformation("CacheHit");
+            _logger.LogInformation("Math response (cache hit): operation={Operation}, result={Result}, description={Description}",
+                operation, cached!.Result, cached.Description);
             return Ok(new MathResponse
             {
                 Result = cached!.Result,
@@ -87,6 +88,8 @@ public class MathController : ControllerBase
             Result = result
         });
 
+        _logger.LogInformation("Math response (cache miss): operation={Operation}, result={Result}, description={Description}",
+            operation, result, description);
         return Ok(new MathResponse
         {
             Result = result,
