@@ -1,0 +1,214 @@
+{
+  "info": {
+    "name": "DNA Math Operations API",
+    "description": "Postman collection for the Matrix Mizrachi DNA project. Run '1. Get Token' first — it auto-saves the JWT for all other requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5219",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Get Token",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.collectionVariables.set('token', json.token);",
+              "pm.test('Token received', function() {",
+              "    pm.expect(json.token).to.be.a('string');",
+              "});",
+              "console.log('Token saved to collection variable.');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/token",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "auth", "token"]
+        },
+        "description": "Generates a JWT Bearer token. The token is automatically saved to the {{token}} collection variable."
+      }
+    },
+    {
+      "name": "2. No JWT → 401 Unauthorized",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 401 Unauthorized', function() {",
+              "    pm.response.to.have.status(401);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "X-ArithmeticOp-ID", "value": "add" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"add\",\n  \"x\": 10,\n  \"y\": 5\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/math",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "math"]
+        },
+        "description": "Calls /api/math without a JWT token. Expects 401 Unauthorized."
+      }
+    },
+    {
+      "name": "3. Cache MISS → 200 (calls Mockoon)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('fromCache is false', function() {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.fromCache).to.be.false;",
+              "});",
+              "pm.test('Result is correct (10 + 5 = 15)', function() {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.result).to.equal(15);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "X-ArithmeticOp-ID", "value": "add" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"add\",\n  \"x\": 10,\n  \"y\": 5\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/math",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "math"]
+        },
+        "description": "First call for add(10,5). Cache is empty so it calls Mockoon and returns fromCache=false."
+      }
+    },
+    {
+      "name": "4. Cache HIT → 200 (no Mockoon/Kafka)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function() {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('fromCache is true', function() {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.fromCache).to.be.true;",
+              "});",
+              "pm.test('Result is correct (10 + 5 = 15)', function() {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.result).to.equal(15);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "X-ArithmeticOp-ID", "value": "add" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"add\",\n  \"x\": 10,\n  \"y\": 5\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/math",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "math"]
+        },
+        "description": "Second call for add(10,5). Result is served from cache — fromCache=true, no Mockoon or Kafka calls."
+      }
+    },
+    {
+      "name": "5. Division by Zero → 400 Bad Request",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 400 Bad Request', function() {",
+              "    pm.response.to.have.status(400);",
+              "});",
+              "pm.test('Error message present', function() {",
+              "    var json = pm.response.json();",
+              "    pm.expect(json.error).to.include('zero');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+        },
+        "method": "POST",
+        "header": [
+          { "key": "X-ArithmeticOp-ID", "value": "divide" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operation\": \"divide\",\n  \"x\": 10,\n  \"y\": 0\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/math",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "math"]
+        },
+        "description": "Attempts to divide by zero. Expects 400 Bad Request with an error message."
+      }
+    }
+  ]
+}
